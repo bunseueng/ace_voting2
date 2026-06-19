@@ -1,8 +1,8 @@
 import { PrismaClient } from "@/generated/prisma";
 
-const prisma = new PrismaClient();
+const globalForPrisma = globalThis;
 
-const globalForPrisma = { prisma: typeof prisma };
+const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 

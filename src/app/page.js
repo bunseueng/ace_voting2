@@ -13,7 +13,9 @@ import Link from "next/link";
 import Navbar from "./Component/Navbar";
 
 export default async function Home() {
-  const poster = await prisma.poster.findMany({});
+  const poster = await prisma.poster.findMany({
+    where: { status: "progressing" },
+  });
   const vote = await prisma.votingTally.findMany();
 
   return (

@@ -67,7 +67,7 @@ export default function Dashboard({ voting, posters, userId }) {
         createdDate: poster.createdAt,
         yesVotes: 0,
         noVotes: 0,
-        status: poster.status || "active",
+        status: poster.status || "progressing",
         firstVoteDate: poster.createdAt,
         dbId: poster.id,
       });
@@ -82,7 +82,7 @@ export default function Dashboard({ voting, posters, userId }) {
           createdDate: vote.createdAt,
           yesVotes: 0,
           noVotes: 0,
-          status: "active",
+          status: "progressing",
           firstVoteDate: vote.createdAt,
           dbId: null,
         });
@@ -174,12 +174,11 @@ export default function Dashboard({ voting, posters, userId }) {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
           id: poster.dbId,
           posterId: poster.id,
         }),
       });
-      if (result.status === 201) {
+      if (result.ok) {
         toast.success(`Poster ${poster.id} deleted successfully`);
         // Refresh the page to update the data
         window.location.reload();
@@ -194,6 +193,49 @@ export default function Dashboard({ voting, posters, userId }) {
     }
   };
 
+  const handleToggleStatus = async (poster) => {
+    if (!poster.dbId) {
+      toast.error("Cannot update: no database record");
+      return;
+    }
+    const next = poster.status === "done" ? "progressing" : "done";
+    try {
+      const res = await fetch("/api/poster", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: poster.dbId, status: next }),
+      });
+      if (res.ok) {
+        toast.success(`Poster ${poster.id} marked ${next}`);
+        window.location.reload();
+      } else {
+        toast.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while updating status");
+    }
+  };
+
+  const handleMarkAllDone = async () => {
+    try {
+      const res = await fetch("/api/poster", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markAllDone" }),
+      });
+      if (res.ok) {
+        toast.success("All progressing projects marked done");
+        window.location.reload();
+      } else {
+        toast.error("Failed to mark all done");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred");
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       {/* Header */}
@@ -204,12 +246,34 @@ export default function Dashboard({ voting, posters, userId }) {
             Monitor your poster performance and voting statistics
           </p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/poster">
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Poster
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline">Mark All Done</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>End the round?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  All progressing projects become done and leave the homepage.
+                  You can reopen them individually later.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleMarkAllDone}>
+                  Mark All Done
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button asChild>
+            <Link href="/dashboard/poster">
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Poster
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -300,8 +364,8 @@ export default function Dashboard({ voting, posters, userId }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="progressing">Progressing</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -352,13 +416,24 @@ export default function Dashboard({ voting, posters, userId }) {
                       <TableCell>
                         <Badge
                           variant={
-                            poster.status === "active" ? "default" : "secondary"
+                            poster.status === "progressing"
+                              ? "default"
+                              : "secondary"
                           }
                         >
                           {poster.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
+                       <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!poster.dbId}
+                          onClick={() => handleToggleStatus(poster)}
+                        >
+                          {poster.status === "done" ? "Reopen" : "Mark Done"}
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -395,6 +470,7 @@ export default function Dashboard({ voting, posters, userId }) {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                       </div>
                       </TableCell>
                     </TableRow>
                   );

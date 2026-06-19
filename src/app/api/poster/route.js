@@ -1,16 +1,25 @@
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const { userId, posterId } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 404 });
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    const { posterId } = await request.json();
+    if (!posterId || typeof posterId !== "string") {
+      return NextResponse.json(
+        { message: "Invalid posterId" },
+        { status: 400 }
+      );
+    }
+
     await prisma.poster.create({
       data: {
-        userId,
+        userId: session.user.id,
         posterId,
       },
     });
@@ -27,23 +36,69 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const { userId, id, posterId } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 404 });
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    const { id, posterId } = await request.json();
+    if (!id || !posterId) {
+      return NextResponse.json(
+        { message: "Missing id or posterId" },
+        { status: 400 }
+      );
+    }
+
     await prisma.$transaction([
-      prisma.voting.deleteMany({ where: { posterId: posterId } }),
-      prisma.votingTally.deleteMany({ where: { posterId: posterId } }),
+      prisma.voting.deleteMany({ where: { posterId } }),
+      prisma.votingTally.deleteMany({ where: { posterId } }),
       prisma.poster.delete({ where: { id } }),
     ]);
 
     return NextResponse.json(
       { message: "Poster successfully deleted" },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
     console.error(error);
     return new Response("Failed to delete poster", { status: 500 });
+  }
+}
+
+const VALID_STATUS = ["progressing", "done"];
+
+export async function PATCH(request) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+
+    if (body.action === "markAllDone") {
+      const result = await prisma.poster.updateMany({
+        where: { status: "progressing" },
+        data: { status: "done" },
+      });
+      return NextResponse.json(
+        { message: "All progressing projects marked done", count: result.count },
+        { status: 200 }
+      );
+    }
+
+    const { id, status } = body;
+    if (!id || !VALID_STATUS.includes(status)) {
+      return NextResponse.json(
+        { message: "Invalid id or status" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.poster.update({ where: { id }, data: { status } });
+    return NextResponse.json({ message: "Status updated" }, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return new Response("Failed to update status", { status: 500 });
   }
 }

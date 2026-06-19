@@ -18,6 +18,7 @@ model Poster {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String
   posterId  String
+  status    Status   @default(progressing)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -28,6 +29,8 @@ model Voting {
   choice    VoteChoice
   deviceId  String // New field to track device
   createdAt DateTime   @default(now())
+
+  @@unique([deviceId, posterId])
 }
 
 model VotingTally {
@@ -35,11 +38,25 @@ model VotingTally {
   posterId String
   choice   VoteChoice
   number   Int        @default(0)
+
+  @@unique([posterId, choice])
 }
 
 enum VoteChoice {
   Yes
   No
+}
+
+enum Status {
+  progressing
+  done
+}
+
+model RateLimit {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique // e.g. voting IP
+  count     Int      @default(0)
+  expiresAt DateTime
 }
 
 model User {

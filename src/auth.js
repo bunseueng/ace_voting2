@@ -3,10 +3,9 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
-// Admin credentials
-const ADMIN_EMAIL = "admin@gmail.com";
-const ADMIN_HASHED_PASSWORD =
-  "$2b$10$RagbdLOjEDAEGBhhNqgIEe8zo.AyJ.F3HBbJqqXbCXPF6JipqTW96"; // Replace with your own hashed password
+// Admin credentials (set in .env)
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_HASHED_PASSWORD = process.env.ADMIN_HASHED_PASSWORD;
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -18,6 +17,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         const { email, password } = credentials;
+
+        if (!ADMIN_EMAIL || !ADMIN_HASHED_PASSWORD) {
+          throw new Error("Server auth not configured");
+        }
 
         if (email !== ADMIN_EMAIL) {
           throw new Error("Unauthorized email");
@@ -36,7 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/sign_in",
   },
   session: {
     strategy: "jwt",

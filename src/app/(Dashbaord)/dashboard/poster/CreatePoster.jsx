@@ -49,12 +49,11 @@ const CreatePoster = ({ userId }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId,
           posterId,
         }),
       });
 
-      if (res.status === 404) {
+      if (!res.ok) {
         toast.error("Unauthorized");
         setSuccess(false);
       } else {
