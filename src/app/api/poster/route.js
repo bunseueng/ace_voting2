@@ -87,6 +87,32 @@ export async function PATCH(request) {
       );
     }
 
+    if (body.action === "reset") {
+      const { posterId } = body;
+      if (!posterId) {
+        return NextResponse.json(
+          { message: "Missing posterId" },
+          { status: 400 }
+        );
+      }
+      const tallies = await prisma.votingTally.findMany({ where: { posterId } });
+      const yesVotes = tallies.find((t) => t.choice === "Yes")?.number || 0;
+      const noVotes = tallies.find((t) => t.choice === "No")?.number || 0;
+
+      await prisma.$transaction([
+        prisma.resultArchive.create({
+          data: { posterId, yesVotes, noVotes },
+        }),
+        prisma.votingTally.deleteMany({ where: { posterId } }),
+        prisma.voting.deleteMany({ where: { posterId } }),
+      ]);
+
+      return NextResponse.json(
+        { message: "Result archived and votes reset" },
+        { status: 200 }
+      );
+    }
+
     const { id, status } = body;
     if (!id || !VALID_STATUS.includes(status)) {
       return NextResponse.json(

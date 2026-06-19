@@ -48,8 +48,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import BannerCard from "./BannerCard";
 
-export default function Dashboard({ voting, posters, userId }) {
+export default function Dashboard({ voting, posters, userId, banner }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("totalVotes");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -236,6 +237,25 @@ export default function Dashboard({ voting, posters, userId }) {
     }
   };
 
+  const handleReset = async (poster) => {
+    try {
+      const res = await fetch("/api/poster", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset", posterId: poster.id }),
+      });
+      if (res.ok) {
+        toast.success(`Poster ${poster.id} votes reset (old result archived)`);
+        window.location.reload();
+      } else {
+        toast.error("Failed to reset votes");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while resetting");
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       {/* Header */}
@@ -247,6 +267,9 @@ export default function Dashboard({ voting, posters, userId }) {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/dashboard/history">History</Link>
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline">Mark All Done</Button>
@@ -275,6 +298,8 @@ export default function Dashboard({ voting, posters, userId }) {
           </Button>
         </div>
       </div>
+
+      <BannerCard currentBanner={banner} />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -434,6 +459,35 @@ export default function Dashboard({ voting, posters, userId }) {
                         >
                           {poster.status === "done" ? "Reopen" : "Mark Done"}
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={!poster.dbId}
+                            >
+                              Reset
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Reset votes?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Archive the current result and reset votes to
+                                zero. Everyone can vote again on Poster{" "}
+                                {poster.id}.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleReset(poster)}
+                              >
+                                Reset
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button

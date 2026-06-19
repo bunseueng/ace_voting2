@@ -1,10 +1,10 @@
 import React from "react";
 
-const Header = () => {
+const Header = ({ src = "/banner.jfif" }) => {
   return (
     <div className="w-full h-full">
       <img
-        src="/banner.jfif"
+        src={src}
         alt="Poster"
         className="w-full h-auto object-cover bg-center"
       />

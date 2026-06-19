@@ -66,3 +66,17 @@ model User {
   password  String // hashed
   createdAt DateTime @default(now())
 }
+
+model Setting {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  key   String @unique
+  value String
+}
+
+model ResultArchive {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  posterId   String
+  yesVotes   Int      @default(0)
+  noVotes    Int      @default(0)
+  archivedAt DateTime @default(now())
+}

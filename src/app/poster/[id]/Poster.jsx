@@ -5,7 +5,7 @@ import { Button } from "../../../../@/components/ui/button";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
 
-const Poster = ({ posterId, closed }) => {
+const Poster = ({ posterId, closed, banner }) => {
   const [choice, setChoice] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +40,7 @@ const Poster = ({ posterId, closed }) => {
   return (
     <div className="max-w-screen-xl mx-auto px-4 md:px-2 lg:px-0">
       <img
-        src="/banner.jfif"
+        src={banner || "/banner.jfif"}
         alt="Voting banner"
         className="w-full h-full object-cover bg-center"
       />
