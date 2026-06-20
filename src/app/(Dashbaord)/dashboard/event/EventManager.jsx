@@ -6,9 +6,12 @@ import { toast } from "sonner";
 export default function EventManager({ events }) {
   const [name, setName] = useState("");
   const [cloneFrom, setCloneFrom] = useState("");
+  const [cloneCount, setCloneCount] = useState("");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
   const active = events.find((e) => e.status === "active");
+  const source = events.find((e) => e.id === cloneFrom);
+  const sourceTotal = source?.posterCount ?? 0;
 
   const open = async (e) => {
     e.preventDefault();
@@ -20,6 +23,7 @@ export default function EventManager({ events }) {
       body: JSON.stringify({
         name,
         clonePostersFrom: cloneFrom || undefined,
+        cloneCount: cloneFrom && cloneCount ? Number(cloneCount) : undefined,
       }),
     });
     setBusy(false);
@@ -32,6 +36,7 @@ export default function EventManager({ events }) {
       );
       setName("");
       setCloneFrom("");
+      setCloneCount("");
       router.refresh();
     } else {
       toast.error("Failed to open event");
@@ -80,32 +85,56 @@ export default function EventManager({ events }) {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Voting Events</h1>
 
-      <form onSubmit={open} className="flex flex-col sm:flex-row gap-2 mb-6">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="New event name"
-          className="border px-3 py-2 flex-1"
-        />
-        <select
-          value={cloneFrom}
-          onChange={(e) => setCloneFrom(e.target.value)}
-          className="border px-3 py-2 cursor-pointer"
-        >
-          <option value="">No posters (empty)</option>
-          {events.map((ev) => (
-            <option key={ev.id} value={ev.id}>
-              Copy posters from: {ev.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          disabled={busy}
-          className="bg-blue-500 text-white px-4 py-2 cursor-pointer disabled:opacity-60"
-        >
-          New Event
-        </button>
+      <form onSubmit={open} className="mb-6 space-y-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="New event name"
+            className="border px-3 py-2 flex-1"
+          />
+          <select
+            value={cloneFrom}
+            onChange={(e) => {
+              setCloneFrom(e.target.value);
+              setCloneCount("");
+            }}
+            className="border px-3 py-2 cursor-pointer"
+          >
+            <option value="">No posters (empty)</option>
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                Copy from: {ev.name} ({ev.posterCount} posters)
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            disabled={busy}
+            className="bg-blue-500 text-white px-4 py-2 cursor-pointer disabled:opacity-60"
+          >
+            New Event
+          </button>
+        </div>
+
+        {cloneFrom && (
+          <div className="flex items-center gap-2 text-sm">
+            <label htmlFor="cloneCount">Clone how many?</label>
+            <input
+              id="cloneCount"
+              type="number"
+              min="1"
+              max={sourceTotal}
+              value={cloneCount}
+              onChange={(e) => setCloneCount(e.target.value)}
+              placeholder={`all (${sourceTotal})`}
+              className="border px-2 py-1 w-32"
+            />
+            <span className="text-muted-foreground">
+              of {sourceTotal} total — blank = all
+            </span>
+          </div>
+        )}
       </form>
 
       {active && (
@@ -125,6 +154,9 @@ export default function EventManager({ events }) {
             className="border p-3 flex justify-between items-center gap-3"
           >
             <span className="flex-1">{ev.name}</span>
+            <span className="text-sm text-muted-foreground">
+              {ev.posterCount} posters
+            </span>
             <span
               className={
                 ev.status === "active" ? "text-green-600" : "text-gray-500"

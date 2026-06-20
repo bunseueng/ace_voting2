@@ -5,7 +5,7 @@ import { Button } from "../../../../@/components/ui/button";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
 
-const Poster = ({ posterId, closed, banner }) => {
+const Poster = ({ posterId, closed, banner, title }) => {
   const [choice, setChoice] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -45,9 +45,7 @@ const Poster = ({ posterId, closed, banner }) => {
         className="w-full h-full object-cover bg-center"
       />
       <div className="mt-10">
-        <h1 className="font-bold text-2xl">
-          Children&apos;s Day Poster Exhibition (ACE Siem Reap)
-        </h1>
+        <h1 className="font-bold text-2xl">{title}</h1>
 
         <div className="w-full h-full">
           {/* Voting options */}

@@ -18,10 +18,16 @@ export default async function EventPage() {
     );
   }
   const events = await prisma.event.findMany({ orderBy: { createdAt: "desc" } });
+  const withCounts = await Promise.all(
+    events.map(async (ev) => ({
+      ...ev,
+      posterCount: await prisma.poster.count({ where: { eventId: ev.id } }),
+    }))
+  );
   return (
     <>
       <Navbar />
-      <EventManager events={events} />
+      <EventManager events={withCounts} />
     </>
   );
 }

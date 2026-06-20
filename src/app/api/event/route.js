@@ -21,7 +21,7 @@ export async function POST(request) {
   if (!(await requireAdmin())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-  const { name, clonePostersFrom } = await request.json();
+  const { name, clonePostersFrom, cloneCount } = await request.json();
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ message: "Invalid name" }, { status: 400 });
   }
@@ -39,9 +39,15 @@ export async function POST(request) {
   // votes start at 0 (no Voting/VotingTally rows copied).
   let cloned = 0;
   if (clonePostersFrom) {
-    const source = await prisma.poster.findMany({
+    let source = await prisma.poster.findMany({
       where: { eventId: clonePostersFrom },
+      orderBy: { createdAt: "asc" },
     });
+    // Optional cap: clone only the first N posters.
+    const n = Number(cloneCount);
+    if (Number.isInteger(n) && n > 0 && n < source.length) {
+      source = source.slice(0, n);
+    }
     if (source.length) {
       await prisma.poster.createMany({
         data: source.map((p) => ({
