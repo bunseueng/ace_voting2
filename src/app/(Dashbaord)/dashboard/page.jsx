@@ -13,7 +13,7 @@ const DashboardPage = async () => {
   // Also fetch posters to get their titles and status
   const session = await auth();
   const userId = session?.user.id;
-  if (!session?.user.name) {
+  if (session?.user?.role !== "Admin") {
     return (
       <>
         <Navbar />

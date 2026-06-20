@@ -2,39 +2,41 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-
-// Admin credentials (set in .env)
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_HASHED_PASSWORD = process.env.ADMIN_HASHED_PASSWORD;
+import prisma from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     CredentialsProvider({
-      name: "Admin Login",
+      name: "Login",
       credentials: {
-        email: { label: "Email", type: "text" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const { email, password } = credentials;
+        const { username, password } = credentials;
 
-        if (!ADMIN_EMAIL || !ADMIN_HASHED_PASSWORD) {
-          throw new Error("Server auth not configured");
+        if (!username || !password) {
+          throw new Error("Missing credentials");
         }
 
-        if (email !== ADMIN_EMAIL) {
-          throw new Error("Unauthorized email");
+        const user = await prisma.user.findUnique({
+          where: { username },
+        });
+        if (!user) {
+          throw new Error("Invalid username or password");
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          password,
-          ADMIN_HASHED_PASSWORD
-        );
+        const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-          throw new Error("Invalid password");
+          throw new Error("Invalid username or password");
         }
 
-        return { id: "admin-id", name: "Admin", email };
+        return {
+          id: user.id,
+          name: user.name ?? user.username,
+          username: user.username,
+          role: user.role,
+        };
       },
     }),
   ],
@@ -46,11 +48,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.username = user.username;
+      }
       return token;
     },
     async session({ session, token }) {
       session.user.id = token.id;
+      session.user.role = token.role;
+      session.user.username = token.username;
       return session;
     },
   },

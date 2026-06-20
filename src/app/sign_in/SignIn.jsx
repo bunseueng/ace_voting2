@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Loader } from "lucide-react";
 
 export default function SignIn() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,11 +19,11 @@ export default function SignIn() {
     try {
       const res = await signIn("credentials", {
         redirect: false,
-        email,
+        username,
         password,
       });
       if (res?.error) {
-        setError("Invalid email or password.");
+        setError("Invalid username or password.");
         toast.error("Sign in failed.");
       } else {
         toast.success("Signed in.");
@@ -44,25 +44,29 @@ export default function SignIn() {
     >
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        name="username"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         className="border px-3 py-2 w-full"
+        autoComplete="off"
         required
       />
       <input
         type="password"
+        name="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         className="border px-3 py-2 w-full"
+        autoComplete="new-password"
         required
       />
       <button
         type="submit"
         disabled={loading}
-        className="bg-blue-500 text-white py-2 px-4 flex items-center justify-center disabled:opacity-60"
+        className="bg-blue-500 text-white py-2 px-4 flex items-center justify-center disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
       >
         {loading ? (
           <>

@@ -14,14 +14,14 @@ export default async function SignIn() {
             await signOut();
           }}
         >
-          <button type="submit">Sign Out</button>
+          <button type="submit" className="cursor-pointer">Sign Out</button>
         </form>
       ) : (
         <Link
           href={"/sign_in"}
           className="cursor-pointer p-0 m-0 block text-sm md:text-lg"
         >
-          <button type="button">Sign In</button>
+          <button type="button" className="cursor-pointer">Sign In</button>
         </Link>
       )}
     </>

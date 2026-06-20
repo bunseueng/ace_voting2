@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import Navbar from "./Component/Navbar";
 import { getBanner } from "@/lib/getBanner";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const poster = await prisma.poster.findMany({
     where: { status: "progressing" },

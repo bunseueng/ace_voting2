@@ -59,6 +59,7 @@ const CreatePoster = ({ userId }) => {
       } else {
         setSuccess(true);
         toast.success("Your poster has been created successfully!");
+        router.refresh();
       }
 
       // Simulate successful poster creation

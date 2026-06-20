@@ -1,11 +1,12 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 export async function POST(request) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (session?.user?.role !== "Admin") {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -24,6 +25,9 @@ export async function POST(request) {
       },
     });
 
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+
     return NextResponse.json(
       { message: "Poster successfully created" },
       { status: 201 }
@@ -37,7 +41,7 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (session?.user?.role !== "Admin") {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -55,6 +59,9 @@ export async function DELETE(request) {
       prisma.poster.delete({ where: { id } }),
     ]);
 
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+
     return NextResponse.json(
       { message: "Poster successfully deleted" },
       { status: 200 }
@@ -70,7 +77,7 @@ const VALID_STATUS = ["progressing", "done"];
 export async function PATCH(request) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (session?.user?.role !== "Admin") {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -81,6 +88,8 @@ export async function PATCH(request) {
         where: { status: "progressing" },
         data: { status: "done" },
       });
+      revalidatePath("/");
+      revalidatePath("/dashboard");
       return NextResponse.json(
         { message: "All progressing projects marked done", count: result.count },
         { status: 200 }
@@ -107,6 +116,8 @@ export async function PATCH(request) {
         prisma.voting.deleteMany({ where: { posterId } }),
       ]);
 
+      revalidatePath("/");
+      revalidatePath("/dashboard");
       return NextResponse.json(
         { message: "Result archived and votes reset" },
         { status: 200 }
@@ -122,6 +133,8 @@ export async function PATCH(request) {
     }
 
     await prisma.poster.update({ where: { id }, data: { status } });
+    revalidatePath("/");
+    revalidatePath("/dashboard");
     return NextResponse.json({ message: "Status updated" }, { status: 200 });
   } catch (error) {
     console.error(error);

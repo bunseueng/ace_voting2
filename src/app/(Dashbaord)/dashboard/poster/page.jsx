@@ -6,7 +6,7 @@ import Navbar from "@/app/Component/Navbar";
 const CreatePosterPage = async () => {
   const session = await auth();
   const userId = session?.user.name; // Also fetch posters to get their titles and status
-  if (!userId) {
+  if (session?.user?.role !== "Admin") {
     return (
       <>
         <Navbar />
