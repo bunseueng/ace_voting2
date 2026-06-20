@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 export default function EventManager({ events }) {
   const [name, setName] = useState("");
+  const [cloneFrom, setCloneFrom] = useState("");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
   const active = events.find((e) => e.status === "active");
@@ -16,12 +17,21 @@ export default function EventManager({ events }) {
     const res = await fetch("/api/event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({
+        name,
+        clonePostersFrom: cloneFrom || undefined,
+      }),
     });
     setBusy(false);
     if (res.ok) {
-      toast.success("Event opened");
+      const data = await res.json();
+      toast.success(
+        data.clonedPosters
+          ? `Event opened — ${data.clonedPosters} posters cloned`
+          : "Event opened"
+      );
       setName("");
+      setCloneFrom("");
       router.refresh();
     } else {
       toast.error("Failed to open event");
@@ -48,13 +58,25 @@ export default function EventManager({ events }) {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Voting Events</h1>
 
-      <form onSubmit={open} className="flex gap-2 mb-6">
+      <form onSubmit={open} className="flex flex-col sm:flex-row gap-2 mb-6">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New event name"
           className="border px-3 py-2 flex-1"
         />
+        <select
+          value={cloneFrom}
+          onChange={(e) => setCloneFrom(e.target.value)}
+          className="border px-3 py-2 cursor-pointer"
+        >
+          <option value="">No posters (empty)</option>
+          {events.map((ev) => (
+            <option key={ev.id} value={ev.id}>
+              Copy posters from: {ev.name}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           disabled={busy}

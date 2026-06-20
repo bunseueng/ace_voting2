@@ -21,10 +21,11 @@ export async function POST(request) {
   if (!(await requireAdmin())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-  const { name } = await request.json();
+  const { name, clonePostersFrom } = await request.json();
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ message: "Invalid name" }, { status: 400 });
   }
+
   const result = await prisma.$transaction([
     prisma.event.updateMany({
       where: { status: "active" },
@@ -34,9 +35,32 @@ export async function POST(request) {
   ]);
   const created = result[result.length - 1];
 
+  // Optionally clone the poster list from a previous event — posters only,
+  // votes start at 0 (no Voting/VotingTally rows copied).
+  let cloned = 0;
+  if (clonePostersFrom) {
+    const source = await prisma.poster.findMany({
+      where: { eventId: clonePostersFrom },
+    });
+    if (source.length) {
+      await prisma.poster.createMany({
+        data: source.map((p) => ({
+          userId: p.userId,
+          posterId: p.posterId,
+          eventId: created.id,
+          status: "progressing",
+        })),
+      });
+      cloned = source.length;
+    }
+  }
+
   revalidatePath("/");
   revalidatePath("/dashboard");
-  return NextResponse.json({ message: "Event opened", event: created }, { status: 201 });
+  return NextResponse.json(
+    { message: "Event opened", event: created, clonedPosters: cloned },
+    { status: 201 }
+  );
 }
 
 export async function PATCH(request) {
