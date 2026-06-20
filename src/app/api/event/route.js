@@ -25,20 +25,13 @@ export async function POST(request) {
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ message: "Invalid name" }, { status: 400 });
   }
-  const active = await getActiveEvent();
-  const ops = [];
-  if (active) {
-    ops.push(
-      prisma.event.update({
-        where: { id: active.id },
-        data: { status: "closed", closedAt: new Date() },
-      })
-    );
-  }
-  ops.push(
-    prisma.event.create({ data: { name: name.trim(), status: "active" } })
-  );
-  const result = await prisma.$transaction(ops);
+  const result = await prisma.$transaction([
+    prisma.event.updateMany({
+      where: { status: "active" },
+      data: { status: "closed", closedAt: new Date() },
+    }),
+    prisma.event.create({ data: { name: name.trim(), status: "active" } }),
+  ]);
   const created = result[result.length - 1];
 
   revalidatePath("/");

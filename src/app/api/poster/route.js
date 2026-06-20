@@ -63,9 +63,14 @@ export async function DELETE(request) {
       );
     }
 
+    const target = await prisma.poster.findUnique({ where: { id } });
+    if (!target) {
+      return NextResponse.json({ message: "Poster not found" }, { status: 404 });
+    }
+
     await prisma.$transaction([
-      prisma.voting.deleteMany({ where: { posterId } }),
-      prisma.votingTally.deleteMany({ where: { posterId } }),
+      prisma.voting.deleteMany({ where: { posterId, eventId: target.eventId } }),
+      prisma.votingTally.deleteMany({ where: { posterId, eventId: target.eventId } }),
       prisma.poster.delete({ where: { id } }),
     ]);
 
@@ -94,8 +99,12 @@ export async function PATCH(request) {
     const body = await request.json();
 
     if (body.action === "markAllDone") {
+      const active = await getActiveEvent();
+      if (!active) {
+        return NextResponse.json({ message: "No active event" }, { status: 409 });
+      }
       const result = await prisma.poster.updateMany({
-        where: { status: "progressing" },
+        where: { status: "progressing", eventId: active.id },
         data: { status: "done" },
       });
       revalidatePath("/");
@@ -114,16 +123,20 @@ export async function PATCH(request) {
           { status: 400 }
         );
       }
-      const tallies = await prisma.votingTally.findMany({ where: { posterId } });
+      const active = await getActiveEvent();
+      if (!active) {
+        return NextResponse.json({ message: "No active event" }, { status: 409 });
+      }
+      const tallies = await prisma.votingTally.findMany({ where: { posterId, eventId: active.id } });
       const yesVotes = tallies.find((t) => t.choice === "Yes")?.number || 0;
       const noVotes = tallies.find((t) => t.choice === "No")?.number || 0;
 
       await prisma.$transaction([
         prisma.resultArchive.create({
-          data: { posterId, yesVotes, noVotes },
+          data: { posterId, eventId: active.id, yesVotes, noVotes },
         }),
-        prisma.votingTally.deleteMany({ where: { posterId } }),
-        prisma.voting.deleteMany({ where: { posterId } }),
+        prisma.votingTally.deleteMany({ where: { posterId, eventId: active.id } }),
+        prisma.voting.deleteMany({ where: { posterId, eventId: active.id } }),
       ]);
 
       revalidatePath("/");
