@@ -76,6 +76,7 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
                     value="Yes"
                     checked={choice === "Yes"}
                     disabled={voted}
+                    className="disabled:cursor-not-allowed"
                     onChange={(e) => setChoice(e.target.value)}
                   />
                   <label htmlFor="Yes" className="pl-2">
@@ -90,6 +91,7 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
                     value="No"
                     checked={choice === "No"}
                     disabled={voted}
+                    className="disabled:cursor-not-allowed"
                     onChange={(e) => setChoice(e.target.value)}
                   />
                   <label htmlFor="No" className="pl-2">
@@ -106,6 +108,7 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
               <Button
                 onClick={handleVote}
                 disabled={loading || voted}
+                className="disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   <>
