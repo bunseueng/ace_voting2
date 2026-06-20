@@ -47,6 +47,14 @@ const Navbar = async () => {
                     Create Poster
                   </a>
                 </li>
+                <li>
+                  <a
+                    href="/dashboard/event"
+                    className="block text-sm md:text-lg bg-transparent md:p-0 dark:text-white text-blue-500 px-1"
+                  >
+                    Events
+                  </a>
+                </li>
               </>
             )}
             <li>
