@@ -54,6 +54,28 @@ export default function EventManager({ events }) {
     }
   };
 
+  const remove = async (ev) => {
+    if (
+      !window.confirm(
+        `Delete "${ev.name}"? This removes the event and all its posters and votes. Cannot be undone.`
+      )
+    )
+      return;
+    setBusy(true);
+    const res = await fetch("/api/event", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: ev.id }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      toast.success("Event deleted");
+      router.refresh();
+    } else {
+      toast.error("Failed to delete event");
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Voting Events</h1>
@@ -100,9 +122,9 @@ export default function EventManager({ events }) {
         {events.map((ev) => (
           <li
             key={ev.id}
-            className="border p-3 flex justify-between items-center"
+            className="border p-3 flex justify-between items-center gap-3"
           >
-            <span>{ev.name}</span>
+            <span className="flex-1">{ev.name}</span>
             <span
               className={
                 ev.status === "active" ? "text-green-600" : "text-gray-500"
@@ -110,6 +132,13 @@ export default function EventManager({ events }) {
             >
               {ev.status}
             </span>
+            <button
+              onClick={() => remove(ev)}
+              disabled={busy}
+              className="text-red-500 hover:text-red-700 text-sm cursor-pointer disabled:opacity-60"
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>

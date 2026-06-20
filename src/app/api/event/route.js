@@ -102,3 +102,30 @@ export async function PATCH(request) {
   revalidatePath("/dashboard");
   return NextResponse.json({ message: "Event closed" }, { status: 200 });
 }
+
+export async function DELETE(request) {
+  if (!(await requireAdmin())) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await request.json();
+  if (!id || typeof id !== "string") {
+    return NextResponse.json({ message: "Invalid id" }, { status: 400 });
+  }
+  const event = await prisma.event.findUnique({ where: { id } });
+  if (!event) {
+    return NextResponse.json({ message: "Event not found" }, { status: 404 });
+  }
+
+  // Remove the event and all data scoped to it.
+  await prisma.$transaction([
+    prisma.voting.deleteMany({ where: { eventId: id } }),
+    prisma.votingTally.deleteMany({ where: { eventId: id } }),
+    prisma.resultArchive.deleteMany({ where: { eventId: id } }),
+    prisma.poster.deleteMany({ where: { eventId: id } }),
+    prisma.event.delete({ where: { id } }),
+  ]);
+
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  return NextResponse.json({ message: "Event deleted" }, { status: 200 });
+}
