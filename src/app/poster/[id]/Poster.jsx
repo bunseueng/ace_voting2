@@ -5,9 +5,10 @@ import { Button } from "../../../../@/components/ui/button";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
 
-const Poster = ({ posterId, closed, banner, title }) => {
+const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
   const [choice, setChoice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [voted, setVoted] = useState(alreadyVoted);
 
   const handleVote = async () => {
     try {
@@ -26,8 +27,13 @@ const Poster = ({ posterId, closed, banner, title }) => {
       const data = await res.json();
 
       if (!res.ok) {
+        // Treat an already-voted response as a permanent state.
+        if (res.status === 400 && /already voted/i.test(data.message || "")) {
+          setVoted(true);
+        }
         toast.error(data.message || "Vote failed.");
       } else {
+        setVoted(true);
         toast.success("Thank you for voting!");
       }
     } catch (error) {
@@ -69,6 +75,7 @@ const Poster = ({ posterId, closed, banner, title }) => {
                     name="vote"
                     value="Yes"
                     checked={choice === "Yes"}
+                    disabled={voted}
                     onChange={(e) => setChoice(e.target.value)}
                   />
                   <label htmlFor="Yes" className="pl-2">
@@ -82,6 +89,7 @@ const Poster = ({ posterId, closed, banner, title }) => {
                     name="vote"
                     value="No"
                     checked={choice === "No"}
+                    disabled={voted}
                     onChange={(e) => setChoice(e.target.value)}
                   />
                   <label htmlFor="No" className="pl-2">
@@ -94,16 +102,26 @@ const Poster = ({ posterId, closed, banner, title }) => {
 
           {/* Submit Button */}
           {!closed && (
-            <Button className="mt-6" onClick={handleVote} disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit"
+            <div className="mt-6 flex items-center gap-3">
+              <Button
+                onClick={handleVote}
+                disabled={loading || voted}
+              >
+                {loading ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </Button>
+              {voted && (
+                <span className="text-red-500 font-semibold text-sm">
+                  You already voted on this poster.
+                </span>
               )}
-            </Button>
+            </div>
           )}
         </div>
       </div>
