@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import ConfirmDialog from "@/app/Component/ConfirmDialog";
 
 export default function EventManager({ events }) {
   const [name, setName] = useState("");
@@ -13,8 +14,7 @@ export default function EventManager({ events }) {
   const source = events.find((e) => e.id === cloneFrom);
   const sourceTotal = source?.posterCount ?? 0;
 
-  const open = async (e) => {
-    e.preventDefault();
+  const open = async () => {
     if (!name.trim()) return;
     setBusy(true);
     const res = await fetch("/api/event", {
@@ -60,12 +60,6 @@ export default function EventManager({ events }) {
   };
 
   const remove = async (ev) => {
-    if (
-      !window.confirm(
-        `Delete "${ev.name}"? This removes the event and all its posters and votes. Cannot be undone.`
-      )
-    )
-      return;
     setBusy(true);
     const res = await fetch("/api/event", {
       method: "DELETE",
@@ -85,7 +79,7 @@ export default function EventManager({ events }) {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Voting Events</h1>
 
-      <form onSubmit={open} className="mb-6 space-y-2">
+      <div className="mb-6 space-y-2">
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             value={name}
@@ -108,13 +102,25 @@ export default function EventManager({ events }) {
               </option>
             ))}
           </select>
-          <button
-            type="submit"
-            disabled={busy}
-            className="bg-blue-500 text-white px-4 py-2 cursor-pointer disabled:opacity-60"
-          >
-            New Event
-          </button>
+          <ConfirmDialog
+            title="Open new event?"
+            description={
+              active
+                ? `This closes the current active event "${active.name}" and opens "${name}".`
+                : `Open a new active event "${name}".`
+            }
+            confirmLabel="Open event"
+            onConfirm={open}
+            trigger={
+              <button
+                type="button"
+                disabled={busy || !name.trim()}
+                className="bg-blue-500 text-white px-4 py-2 cursor-pointer disabled:opacity-60"
+              >
+                New Event
+              </button>
+            }
+          />
         </div>
 
         {cloneFrom && (
@@ -135,16 +141,23 @@ export default function EventManager({ events }) {
             </span>
           </div>
         )}
-      </form>
+      </div>
 
       {active && (
-        <button
-          onClick={close}
-          disabled={busy}
-          className="bg-red-500 text-white px-4 py-2 mb-6 cursor-pointer disabled:opacity-60"
-        >
-          Close active event ({active.name})
-        </button>
+        <ConfirmDialog
+          title="Close active event?"
+          description={`Close "${active.name}". Its results are archived and the homepage shows no active round until you open a new one.`}
+          confirmLabel="Close event"
+          onConfirm={close}
+          trigger={
+            <button
+              disabled={busy}
+              className="bg-red-500 text-white px-4 py-2 mb-6 cursor-pointer disabled:opacity-60"
+            >
+              Close active event ({active.name})
+            </button>
+          }
+        />
       )}
 
       <ul className="space-y-2">
@@ -164,13 +177,21 @@ export default function EventManager({ events }) {
             >
               {ev.status}
             </span>
-            <button
-              onClick={() => remove(ev)}
-              disabled={busy}
-              className="text-red-500 hover:text-red-700 text-sm cursor-pointer disabled:opacity-60"
-            >
-              Delete
-            </button>
+            <ConfirmDialog
+              title={`Delete "${ev.name}"?`}
+              description="This removes the event and all its posters and votes. Cannot be undone."
+              confirmLabel="Delete"
+              confirmClassName="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onConfirm={() => remove(ev)}
+              trigger={
+                <button
+                  disabled={busy}
+                  className="text-red-500 hover:text-red-700 text-sm cursor-pointer disabled:opacity-60"
+                >
+                  Delete
+                </button>
+              }
+            />
           </li>
         ))}
       </ul>
