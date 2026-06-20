@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import ConfirmDialog from "@/app/Component/ConfirmDialog";
 
 const CreatePoster = ({ userId }) => {
   const [posterId, setPosterId] = useState("");
@@ -24,9 +25,7 @@ const CreatePoster = ({ userId }) => {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const createPoster = async () => {
     // Reset states
     setError(null);
     setSuccess(false);
@@ -87,7 +86,7 @@ const CreatePoster = ({ userId }) => {
             </CardDescription>
           </CardHeader>
 
-          <form onSubmit={handleSubmit}>
+          <div>
             <CardContent className="space-y-4">
               {error && (
                 <Alert variant="destructive">
@@ -119,22 +118,30 @@ const CreatePoster = ({ userId }) => {
             </CardContent>
 
             <CardFooter>
-              <Button
-                type="submit"
-                className="w-full mt-5"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Poster"
-                )}
-              </Button>
+              <ConfirmDialog
+                title="Create this poster?"
+                description={`Add poster "${posterId}" to the active event.`}
+                confirmLabel="Create"
+                onConfirm={createPoster}
+                trigger={
+                  <Button
+                    type="button"
+                    className="w-full mt-5"
+                    disabled={isSubmitting || !posterId.trim()}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Poster"
+                    )}
+                  </Button>
+                }
+              />
             </CardFooter>
-          </form>
+          </div>
         </Card>
       </div>
     </div>

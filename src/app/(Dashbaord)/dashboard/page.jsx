@@ -4,15 +4,12 @@ import Dashboard from "./Dashboard";
 import { auth } from "@/auth";
 import Navbar from "@/app/Component/Navbar";
 import { getBanner } from "@/lib/getBanner";
+import { getActiveEvent } from "@/lib/activeEvent";
 export const dynamic = "force-dynamic";
 
 const DashboardPage = async () => {
-  const voting = await prisma.votingTally.findMany();
-  const posters = await prisma.poster.findMany();
-  const banner = await getBanner();
-  // Also fetch posters to get their titles and status
   const session = await auth();
-  const userId = session?.user.id;
+  const userId = session?.user?.id;
   if (session?.user?.role !== "Admin") {
     return (
       <>
@@ -23,6 +20,24 @@ const DashboardPage = async () => {
       </>
     );
   }
+
+  const active = await getActiveEvent();
+  const banner = await getBanner();
+
+  if (!active) {
+    return (
+      <>
+        <Navbar />
+        <div className="text-center mt-20 text-muted-foreground text-lg">
+          No active voting round.
+        </div>
+      </>
+    );
+  }
+
+  const voting = await prisma.votingTally.findMany({ where: { eventId: active.id } });
+  const posters = await prisma.poster.findMany({ where: { eventId: active.id } });
+
   return (
     <>
       <Navbar />

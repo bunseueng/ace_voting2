@@ -18,6 +18,7 @@ model Poster {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String
   posterId  String
+  eventId   String   @db.ObjectId
   status    Status   @default(progressing)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -26,20 +27,22 @@ model Poster {
 model Voting {
   id        String     @id @default(auto()) @map("_id") @db.ObjectId
   posterId  String
+  eventId   String     @db.ObjectId
   choice    VoteChoice
-  deviceId  String // New field to track device
+  deviceId  String
   createdAt DateTime   @default(now())
 
-  @@unique([deviceId, posterId])
+  @@unique([deviceId, posterId, eventId])
 }
 
 model VotingTally {
   id       String     @id @default(auto()) @map("_id") @db.ObjectId
   posterId String
+  eventId  String     @db.ObjectId
   choice   VoteChoice
   number   Int        @default(0)
 
-  @@unique([posterId, choice])
+  @@unique([posterId, choice, eventId])
 }
 
 enum VoteChoice {
@@ -83,7 +86,21 @@ model Setting {
 model ResultArchive {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   posterId   String
+  eventId    String   @db.ObjectId
   yesVotes   Int      @default(0)
   noVotes    Int      @default(0)
   archivedAt DateTime @default(now())
+}
+
+model Event {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  status    EventStatus @default(active)
+  createdAt DateTime    @default(now())
+  closedAt  DateTime?
+}
+
+enum EventStatus {
+  active
+  closed
 }

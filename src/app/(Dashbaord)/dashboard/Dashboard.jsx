@@ -49,6 +49,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import BannerCard from "./BannerCard";
+import ConfirmDialog from "@/app/Component/ConfirmDialog";
 
 export default function Dashboard({ voting, posters, userId, banner }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -451,14 +452,31 @@ export default function Dashboard({ voting, posters, userId, banner }) {
                       </TableCell>
                       <TableCell className="text-center">
                        <div className="flex items-center justify-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={!poster.dbId}
-                          onClick={() => handleToggleStatus(poster)}
-                        >
-                          {poster.status === "done" ? "Reopen" : "Mark Done"}
-                        </Button>
+                        <ConfirmDialog
+                          title={
+                            poster.status === "done"
+                              ? `Reopen Poster ${poster.id}?`
+                              : `Mark Poster ${poster.id} done?`
+                          }
+                          description={
+                            poster.status === "done"
+                              ? "It returns to the active round and shows on the homepage again."
+                              : "It leaves the homepage and voting closes for it."
+                          }
+                          confirmLabel={
+                            poster.status === "done" ? "Reopen" : "Mark Done"
+                          }
+                          onConfirm={() => handleToggleStatus(poster)}
+                          trigger={
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={!poster.dbId}
+                            >
+                              {poster.status === "done" ? "Reopen" : "Mark Done"}
+                            </Button>
+                          }
+                        />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
