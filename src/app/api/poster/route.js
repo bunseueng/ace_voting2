@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { getActiveEvent } from "@/lib/activeEvent";
 
 export async function POST(request) {
   try {
@@ -18,10 +19,19 @@ export async function POST(request) {
       );
     }
 
+    const active = await getActiveEvent();
+    if (!active) {
+      return NextResponse.json(
+        { message: "No active event. Open an event first." },
+        { status: 409 }
+      );
+    }
+
     await prisma.poster.create({
       data: {
         userId: session.user.id,
         posterId,
+        eventId: active.id,
       },
     });
 
