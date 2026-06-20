@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getActiveEvent } from "@/lib/activeEvent";
 
 const VALID_CHOICES = ["Yes", "No"];
 
@@ -52,8 +53,17 @@ export async function POST(request) {
       );
     }
 
+    // Resolve the active voting round — reject if none.
+    const active = await getActiveEvent();
+    if (!active) {
+      return NextResponse.json(
+        { message: "No active voting round." },
+        { status: 409 }
+      );
+    }
+
     // Block voting on closed (done) projects
-    const poster = await prisma.poster.findFirst({ where: { posterId } });
+    const poster = await prisma.poster.findFirst({ where: { posterId, eventId: active.id } });
     if (!poster || poster.status === "done") {
       return NextResponse.json(
         { message: "Voting is closed for this project." },
@@ -61,11 +71,11 @@ export async function POST(request) {
       );
     }
 
-    // Atomic insert — unique([deviceId, posterId]) prevents double vote.
+    // Atomic insert — unique([deviceId, posterId, eventId]) prevents double vote per round.
     // Catch P2002 (unique violation) instead of racy findFirst+create.
     try {
       await prisma.voting.create({
-        data: { deviceId, posterId, choice },
+        data: { deviceId, posterId, choice, eventId: active.id },
       });
     } catch (error) {
       if (error?.code === "P2002") {
@@ -77,11 +87,11 @@ export async function POST(request) {
       throw error;
     }
 
-    // Atomic tally increment — upsert on unique([posterId, choice])
+    // Atomic tally increment — upsert on unique([posterId, choice, eventId])
     await prisma.votingTally.upsert({
-      where: { posterId_choice: { posterId, choice } },
+      where: { posterId_choice_eventId: { posterId, choice, eventId: active.id } },
       update: { number: { increment: 1 } },
-      create: { posterId, choice, number: 1 },
+      create: { posterId, choice, eventId: active.id, number: 1 },
     });
 
     return NextResponse.json(
