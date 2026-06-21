@@ -9,6 +9,7 @@ const ADMIN_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/poster", label: "Create Poster" },
   { href: "/dashboard/event", label: "Events" },
+  { href: "/dashboard/qr", label: "QR Codes" },
 ];
 
 export default function NavbarClient({ isAdmin, authSlot }) {
