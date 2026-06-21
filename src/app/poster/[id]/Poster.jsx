@@ -85,13 +85,14 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
   };
 
   return (
-    <div className="max-w-screen-xl mx-auto px-4 md:px-2 lg:px-0">
+    <div>
+      {/* Banner is full-bleed (outside the padded content column). */}
       <img
         src={banner || "/banner.jfif"}
         alt="Voting banner"
-        className="block h-auto -mx-4 w-[calc(100%+2rem)] md:mx-0 md:w-full"
+        className="block w-full h-auto"
       />
-      <div className="mt-10">
+      <div className="max-w-screen-xl mx-auto px-4 md:px-2 lg:px-0 mt-10">
         <h1 className="font-bold text-2xl">{title}</h1>
 
         <div className="w-full h-full">
