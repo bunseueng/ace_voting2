@@ -12,6 +12,9 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
   // Voted before this visit (server/fingerprint-detected) vs. just voted now.
   const [alreadyVotedBefore, setAlreadyVotedBefore] = useState(alreadyVoted);
   const [justVoted, setJustVoted] = useState(false);
+  // Resolving the fingerprint + prior-vote check. Keep the button disabled
+  // until known, so it never flashes "votable" then flips to already-voted.
+  const [checking, setChecking] = useState(!alreadyVoted && !closed);
   const fpRef = useRef(null);
   const voted = alreadyVotedBefore || justVoted;
 
@@ -19,13 +22,17 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
   // fingerprint already voted (catches incognito / cleared-cookie reuse that
   // the cookie-based server check on the page misses).
   useEffect(() => {
+    if (closed || alreadyVoted) {
+      setChecking(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
-      const fp = await getVisitorId();
-      if (cancelled) return;
-      fpRef.current = fp;
-      if (!fp || closed) return;
       try {
+        const fp = await getVisitorId();
+        if (cancelled) return;
+        fpRef.current = fp;
+        if (!fp) return;
         const res = await fetch("/api/voting/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -35,12 +42,14 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
         if (!cancelled && data?.voted) setAlreadyVotedBefore(true);
       } catch {
         // non-fatal: fall back to whatever the server cookie check decided
+      } finally {
+        if (!cancelled) setChecking(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [posterId, closed]);
+  }, [posterId, closed, alreadyVoted]);
 
   const handleVote = async () => {
     try {
@@ -107,7 +116,7 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
                     name="vote"
                     value="Yes"
                     checked={choice === "Yes"}
-                    disabled={voted}
+                    disabled={voted || checking}
                     className="disabled:cursor-not-allowed"
                     onChange={(e) => setChoice(e.target.value)}
                   />
@@ -139,13 +148,18 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
             <div className="mt-6 flex items-center gap-3">
               <Button
                 onClick={handleVote}
-                disabled={loading || voted}
+                disabled={loading || voted || checking}
                 className="disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   <>
                     <Loader className="mr-2 h-4 w-4 animate-spin" />
                     Submitting...
+                  </>
+                ) : checking ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Checking...
                   </>
                 ) : (
                   "Submit"
