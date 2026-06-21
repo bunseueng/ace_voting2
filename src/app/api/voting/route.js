@@ -9,14 +9,16 @@ const VALID_CHOICES = ["Yes", "No"];
 
 export async function POST(request) {
   try {
-    // Identify device by cookie (NOT IP — students share school WiFi).
-    const cookieStore = await cookies();
-    let deviceId = cookieStore.get("deviceId")?.value;
+    const { choice, posterId, fp } = await request.json();
 
-    // If no deviceId cookie exists, create one
-    if (!deviceId) {
-      deviceId = crypto.randomUUID();
-      cookieStore.set("deviceId", deviceId, {
+    // Identify the voter by browser fingerprint (resists incognito + cookie
+    // clearing on the same device). Fall back to a cookie id when
+    // fingerprinting is unavailable. NOT IP — students share school WiFi.
+    const cookieStore = await cookies();
+    let cookieId = cookieStore.get("deviceId")?.value;
+    if (!cookieId) {
+      cookieId = crypto.randomUUID();
+      cookieStore.set("deviceId", cookieId, {
         path: "/",
         httpOnly: true,
         sameSite: "lax",
@@ -24,6 +26,8 @@ export async function POST(request) {
         maxAge: 60 * 60 * 24 * 365, // 1 year
       });
     }
+    const deviceId =
+      typeof fp === "string" && fp.trim() ? `fp:${fp.trim()}` : cookieId;
 
     // Rate limit per DEVICE, not per IP — shared WiFi must not block voters.
     const allowed = await rateLimit(`vote:${deviceId}`, {
@@ -36,8 +40,6 @@ export async function POST(request) {
         { status: 429 }
       );
     }
-
-    const { choice, posterId } = await request.json();
 
     // Validate input
     if (!VALID_CHOICES.includes(choice)) {

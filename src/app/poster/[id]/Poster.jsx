@@ -1,17 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../../../../@/components/ui/button";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
+import { getVisitorId } from "@/lib/fingerprint";
 
 const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
   const [choice, setChoice] = useState("");
   const [loading, setLoading] = useState(false);
-  // Voted before this visit (server-detected) vs. just voted now.
+  // Voted before this visit (server/fingerprint-detected) vs. just voted now.
   const [alreadyVotedBefore, setAlreadyVotedBefore] = useState(alreadyVoted);
   const [justVoted, setJustVoted] = useState(false);
+  const fpRef = useRef(null);
   const voted = alreadyVotedBefore || justVoted;
+
+  // Compute the browser fingerprint once, then ask the server whether this
+  // fingerprint already voted (catches incognito / cleared-cookie reuse that
+  // the cookie-based server check on the page misses).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const fp = await getVisitorId();
+      if (cancelled) return;
+      fpRef.current = fp;
+      if (!fp || closed) return;
+      try {
+        const res = await fetch("/api/voting/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ posterId, fp }),
+        });
+        const data = await res.json();
+        if (!cancelled && data?.voted) setAlreadyVotedBefore(true);
+      } catch {
+        // non-fatal: fall back to whatever the server cookie check decided
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [posterId, closed]);
 
   const handleVote = async () => {
     try {
@@ -24,7 +53,7 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
       const res = await fetch("/api/voting", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ posterId, choice }),
+        body: JSON.stringify({ posterId, choice, fp: fpRef.current }),
       });
 
       const data = await res.json();
