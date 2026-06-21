@@ -89,7 +89,7 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
       <img
         src={banner || "/banner.jfif"}
         alt="Voting banner"
-        className="w-full h-auto block"
+        className="block h-auto -mx-4 w-[calc(100%+2rem)] md:mx-0 md:w-full"
       />
       <div className="mt-10">
         <h1 className="font-bold text-2xl">{title}</h1>
