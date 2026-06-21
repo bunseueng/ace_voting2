@@ -8,7 +8,10 @@ import { Loader } from "lucide-react";
 const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
   const [choice, setChoice] = useState("");
   const [loading, setLoading] = useState(false);
-  const [voted, setVoted] = useState(alreadyVoted);
+  // Voted before this visit (server-detected) vs. just voted now.
+  const [alreadyVotedBefore, setAlreadyVotedBefore] = useState(alreadyVoted);
+  const [justVoted, setJustVoted] = useState(false);
+  const voted = alreadyVotedBefore || justVoted;
 
   const handleVote = async () => {
     try {
@@ -27,13 +30,13 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
       const data = await res.json();
 
       if (!res.ok) {
-        // Treat an already-voted response as a permanent state.
+        // Treat an already-voted response as a permanent prior-vote state.
         if (res.status === 400 && /already voted/i.test(data.message || "")) {
-          setVoted(true);
+          setAlreadyVotedBefore(true);
         }
         toast.error(data.message || "Vote failed.");
       } else {
-        setVoted(true);
+        setJustVoted(true);
         toast.success("Thank you for voting!");
       }
     } catch (error) {
@@ -119,10 +122,16 @@ const Poster = ({ posterId, closed, banner, title, alreadyVoted }) => {
                   "Submit"
                 )}
               </Button>
-              {voted && (
-                <span className="text-red-500 font-semibold text-sm">
-                  You already voted on this poster.
+              {justVoted ? (
+                <span className="text-green-600 font-semibold text-sm">
+                  Thank you — your vote was recorded.
                 </span>
+              ) : (
+                alreadyVotedBefore && (
+                  <span className="text-red-500 font-semibold text-sm">
+                    You already voted on this poster.
+                  </span>
+                )
               )}
             </div>
           )}
