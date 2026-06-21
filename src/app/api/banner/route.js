@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import cloudinary, { cloudinaryConfigured } from "@/lib/cloudinary";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function POST(request) {
   try {
@@ -35,6 +36,7 @@ export async function POST(request) {
       create: { key: "banner", value: uploaded.secure_url },
     });
 
+    revalidateTag("banner");
     return NextResponse.json({ url: uploaded.secure_url }, { status: 200 });
   } catch (error) {
     console.error(error);

@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getActiveEvent } from "@/lib/activeEvent";
 
 async function requireAdmin() {
@@ -61,6 +61,7 @@ export async function POST(request) {
     }
   }
 
+  revalidateTag("active-event");
   revalidatePath("/");
   revalidatePath("/dashboard");
   return NextResponse.json(
@@ -104,6 +105,7 @@ export async function PATCH(request) {
     }),
   ]);
 
+  revalidateTag("active-event");
   revalidatePath("/");
   revalidatePath("/dashboard");
   return NextResponse.json({ message: "Event closed" }, { status: 200 });
@@ -131,6 +133,7 @@ export async function DELETE(request) {
     prisma.event.delete({ where: { id } }),
   ]);
 
+  revalidateTag("active-event");
   revalidatePath("/");
   revalidatePath("/dashboard");
   return NextResponse.json({ message: "Event deleted" }, { status: 200 });
