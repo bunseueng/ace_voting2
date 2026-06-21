@@ -11,7 +11,7 @@ export async function POST(request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { posterId } = await request.json();
+    const { posterId, eventId } = await request.json();
     if (!posterId || typeof posterId !== "string") {
       return NextResponse.json(
         { message: "Invalid posterId" },
@@ -19,19 +19,30 @@ export async function POST(request) {
       );
     }
 
-    const active = await getActiveEvent();
-    if (!active) {
-      return NextResponse.json(
-        { message: "No active event. Open an event first." },
-        { status: 409 }
-      );
+    // Use the chosen event when provided; otherwise fall back to the active one.
+    let targetEventId;
+    if (eventId && typeof eventId === "string") {
+      const event = await prisma.event.findUnique({ where: { id: eventId } });
+      if (!event) {
+        return NextResponse.json({ message: "Event not found" }, { status: 404 });
+      }
+      targetEventId = event.id;
+    } else {
+      const active = await getActiveEvent();
+      if (!active) {
+        return NextResponse.json(
+          { message: "No active event. Open an event first." },
+          { status: 409 }
+        );
+      }
+      targetEventId = active.id;
     }
 
     await prisma.poster.create({
       data: {
         userId: session.user.id,
         posterId,
-        eventId: active.id,
+        eventId: targetEventId,
       },
     });
 

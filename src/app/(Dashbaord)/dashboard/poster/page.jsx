@@ -1,7 +1,10 @@
 import React from "react";
 import { auth } from "@/auth"; // or wherever your auth comes from
+import prisma from "@/lib/prisma";
 import CreatePoster from "./CreatePoster";
 import Navbar from "@/app/Component/Navbar";
+
+export const dynamic = "force-dynamic";
 
 const CreatePosterPage = async () => {
   const session = await auth();
@@ -16,9 +19,13 @@ const CreatePosterPage = async () => {
       </>
     );
   }
+  const events = await prisma.event.findMany({
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, status: true },
+  });
   return (
     <>
-      <Navbar /> <CreatePoster userId={userId} />
+      <Navbar /> <CreatePoster userId={userId} events={events} />
     </>
   );
 };

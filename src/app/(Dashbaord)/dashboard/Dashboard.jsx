@@ -36,11 +36,22 @@ import {
   Loader,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import BannerCard from "./BannerCard";
 import ConfirmDialog from "@/app/Component/ConfirmDialog";
 
-export default function Dashboard({ voting, posters, userId, banner }) {
+export default function Dashboard({
+  voting,
+  posters,
+  userId,
+  banner,
+  events = [],
+  selectedEventId,
+  selectedEventName,
+  isActive = true,
+}) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("totalVotes");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -256,17 +267,35 @@ export default function Dashboard({ voting, posters, userId, banner }) {
             Monitor your poster performance and voting statistics
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Select
+            value={selectedEventId}
+            onValueChange={(id) => router.push(`/dashboard?eventId=${id}`)}
+          >
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Select event" />
+            </SelectTrigger>
+            <SelectContent>
+              {events.map((ev) => (
+                <SelectItem key={ev.id} value={ev.id}>
+                  {ev.name}
+                  {ev.status === "active" ? " (active)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button asChild variant="outline">
             <Link href="/dashboard/history">History</Link>
           </Button>
-          <ConfirmDialog
-            title="End the round?"
-            description="All progressing projects become done and leave the homepage. You can reopen them individually later."
-            confirmLabel="Mark All Done"
-            onConfirm={handleMarkAllDone}
-            trigger={<Button variant="outline">Mark All Done</Button>}
-          />
+          {isActive && (
+            <ConfirmDialog
+              title="End the round?"
+              description="All progressing projects become done and leave the homepage. You can reopen them individually later."
+              confirmLabel="Mark All Done"
+              onConfirm={handleMarkAllDone}
+              trigger={<Button variant="outline">Mark All Done</Button>}
+            />
+          )}
           <Button asChild>
             <Link href="/dashboard/poster">
               <Plus className="mr-2 h-4 w-4" />
@@ -275,6 +304,14 @@ export default function Dashboard({ voting, posters, userId, banner }) {
           </Button>
         </div>
       </div>
+
+      {!isActive && (
+        <div className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Viewing <span className="font-semibold">{selectedEventName}</span>{" "}
+          (not the active round) — read-only. Switch to the active event to
+          manage posters and votes.
+        </div>
+      )}
 
       <BannerCard currentBanner={banner} />
 
@@ -427,6 +464,11 @@ export default function Dashboard({ voting, posters, userId, banner }) {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
+                       {!isActive ? (
+                        <span className="text-xs text-muted-foreground">
+                          Read-only
+                        </span>
+                       ) : (
                        <div className="flex items-center justify-center gap-2">
                         <ConfirmDialog
                           title={
@@ -491,6 +533,7 @@ export default function Dashboard({ voting, posters, userId, banner }) {
                           }
                         />
                        </div>
+                       )}
                       </TableCell>
                     </TableRow>
                   );

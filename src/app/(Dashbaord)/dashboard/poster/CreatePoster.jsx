@@ -12,18 +12,31 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ConfirmDialog from "@/app/Component/ConfirmDialog";
 
-const CreatePoster = ({ userId }) => {
+const CreatePoster = ({ userId, events = [] }) => {
   const [posterId, setPosterId] = useState("");
+  // Default to the active event if there is one, else the newest.
+  const [eventId, setEventId] = useState(
+    events.find((e) => e.status === "active")?.id || events[0]?.id || ""
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+
+  const selectedEvent = events.find((e) => e.id === eventId);
 
   const createPoster = async () => {
     // Reset states
@@ -33,6 +46,10 @@ const CreatePoster = ({ userId }) => {
     // Validate input
     if (!posterId.trim()) {
       setError("Please enter a poster ID");
+      return;
+    }
+    if (!eventId) {
+      setError("Please select an event");
       return;
     }
 
@@ -49,6 +66,7 @@ const CreatePoster = ({ userId }) => {
         },
         body: JSON.stringify({
           posterId,
+          eventId,
         }),
       });
 
@@ -107,6 +125,29 @@ const CreatePoster = ({ userId }) => {
               )}
 
               <div className="space-y-2">
+                <Label htmlFor="event">Event</Label>
+                {events.length === 0 ? (
+                  <p className="text-sm text-red-500">
+                    No events yet. Create an event first.
+                  </p>
+                ) : (
+                  <Select value={eventId} onValueChange={setEventId}>
+                    <SelectTrigger id="event" className="w-full">
+                      <SelectValue placeholder="Select an event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {events.map((ev) => (
+                        <SelectItem key={ev.id} value={ev.id}>
+                          {ev.name}
+                          {ev.status === "active" ? " (active)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="poster-id">Poster ID</Label>
                 <Input
                   id="poster-id"
@@ -120,14 +161,16 @@ const CreatePoster = ({ userId }) => {
             <CardFooter>
               <ConfirmDialog
                 title="Create this poster?"
-                description={`Add poster "${posterId}" to the active event.`}
+                description={`Add poster "${posterId}" to "${
+                  selectedEvent?.name || "—"
+                }".`}
                 confirmLabel="Create"
                 onConfirm={createPoster}
                 trigger={
                   <Button
                     type="button"
                     className="w-full mt-5"
-                    disabled={isSubmitting || !posterId.trim()}
+                    disabled={isSubmitting || !posterId.trim() || !eventId}
                   >
                     {isSubmitting ? (
                       <>
