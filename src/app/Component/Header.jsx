@@ -2,11 +2,11 @@ import React from "react";
 
 const Header = ({ src = "/banner.jfif" }) => {
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full">
       <img
         src={src}
         alt="Event banner"
-        className="w-full h-[170px] sm:h-[240px] md:h-[320px] lg:h-[400px] object-cover object-center"
+        className="w-full h-auto block"
       />
     </div>
   );
