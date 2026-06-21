@@ -21,8 +21,7 @@ const DashboardPage = async () => {
     );
   }
 
-  const active = await getActiveEvent();
-  const banner = await getBanner();
+  const [active, banner] = await Promise.all([getActiveEvent(), getBanner()]);
 
   if (!active) {
     return (
@@ -35,8 +34,10 @@ const DashboardPage = async () => {
     );
   }
 
-  const voting = await prisma.votingTally.findMany({ where: { eventId: active.id } });
-  const posters = await prisma.poster.findMany({ where: { eventId: active.id } });
+  const [voting, posters] = await Promise.all([
+    prisma.votingTally.findMany({ where: { eventId: active.id } }),
+    prisma.poster.findMany({ where: { eventId: active.id } }),
+  ]);
 
   return (
     <>

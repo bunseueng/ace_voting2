@@ -8,16 +8,15 @@ import { getActiveEvent } from "@/lib/activeEvent";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const active = await getActiveEvent();
-  const poster = active
-    ? await prisma.poster.findMany({
-        where: { eventId: active.id, status: "progressing" },
-      })
-    : [];
-  const vote = active
-    ? await prisma.votingTally.findMany({ where: { eventId: active.id } })
-    : [];
-  const banner = await getBanner();
+  const [active, banner] = await Promise.all([getActiveEvent(), getBanner()]);
+  const [poster, vote] = active
+    ? await Promise.all([
+        prisma.poster.findMany({
+          where: { eventId: active.id, status: "progressing" },
+        }),
+        prisma.votingTally.findMany({ where: { eventId: active.id } }),
+      ])
+    : [[], []];
 
   return (
     <>

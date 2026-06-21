@@ -22,6 +22,9 @@ model Poster {
   status    Status   @default(progressing)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([eventId, status])
+  @@index([eventId])
 }
 
 model Voting {
@@ -33,6 +36,7 @@ model Voting {
   createdAt DateTime   @default(now())
 
   @@unique([deviceId, posterId, eventId])
+  @@index([eventId])
 }
 
 model VotingTally {
@@ -43,6 +47,7 @@ model VotingTally {
   number   Int        @default(0)
 
   @@unique([posterId, choice, eventId])
+  @@index([eventId])
 }
 
 enum VoteChoice {
@@ -90,6 +95,8 @@ model ResultArchive {
   yesVotes   Int      @default(0)
   noVotes    Int      @default(0)
   archivedAt DateTime @default(now())
+
+  @@index([eventId])
 }
 
 model Event {
@@ -98,6 +105,8 @@ model Event {
   status    EventStatus @default(active)
   createdAt DateTime    @default(now())
   closedAt  DateTime?
+
+  @@index([status])
 }
 
 enum EventStatus {

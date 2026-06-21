@@ -9,24 +9,29 @@ export const dynamic = "force-dynamic";
 
 const PosterPage = async ({ params }) => {
   const { id } = await params;
-  const active = await getActiveEvent();
-  const poster = active
-    ? await prisma.poster.findFirst({
-        where: { posterId: id, eventId: active.id },
-      })
-    : null;
+  const [active, banner, cookieStore] = await Promise.all([
+    getActiveEvent(),
+    getBanner(),
+    cookies(),
+  ]);
+  const deviceId = cookieStore.get("deviceId")?.value;
+
+  // Poster lookup + this-device prior-vote check run together.
+  const [poster, priorVote] = active
+    ? await Promise.all([
+        prisma.poster.findFirst({
+          where: { posterId: id, eventId: active.id },
+        }),
+        deviceId
+          ? prisma.voting.findFirst({
+              where: { deviceId, posterId: id, eventId: active.id },
+            })
+          : Promise.resolve(null),
+      ])
+    : [null, null];
+
   const closed = !poster || poster.status === "done";
-
-  // Has THIS device already voted on this poster in the active event?
-  const deviceId = (await cookies()).get("deviceId")?.value;
-  const alreadyVoted =
-    !!active && !!deviceId
-      ? !!(await prisma.voting.findFirst({
-          where: { deviceId, posterId: id, eventId: active.id },
-        }))
-      : false;
-
-  const banner = await getBanner();
+  const alreadyVoted = !!priorVote;
   const title = active?.name || "Poster Exhibition";
   return (
     <div>

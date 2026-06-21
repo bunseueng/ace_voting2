@@ -17,13 +17,17 @@ export default async function EventPage() {
       </>
     );
   }
-  const events = await prisma.event.findMany({ orderBy: { createdAt: "desc" } });
-  const withCounts = await Promise.all(
-    events.map(async (ev) => ({
-      ...ev,
-      posterCount: await prisma.poster.count({ where: { eventId: ev.id } }),
-    }))
+  const [events, grouped] = await Promise.all([
+    prisma.event.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.poster.groupBy({ by: ["eventId"], _count: { _all: true } }),
+  ]);
+  const countByEvent = Object.fromEntries(
+    grouped.map((g) => [g.eventId, g._count._all])
   );
+  const withCounts = events.map((ev) => ({
+    ...ev,
+    posterCount: countByEvent[ev.id] ?? 0,
+  }));
   return (
     <>
       <Navbar />

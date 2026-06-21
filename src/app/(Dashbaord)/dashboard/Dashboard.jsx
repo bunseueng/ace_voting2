@@ -27,17 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
   Search,
   TrendingUp,
   TrendingDown,
@@ -271,26 +260,13 @@ export default function Dashboard({ voting, posters, userId, banner }) {
           <Button asChild variant="outline">
             <Link href="/dashboard/history">History</Link>
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline">Mark All Done</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>End the round?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  All progressing projects become done and leave the homepage.
-                  You can reopen them individually later.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleMarkAllDone}>
-                  Mark All Done
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <ConfirmDialog
+            title="End the round?"
+            description="All progressing projects become done and leave the homepage. You can reopen them individually later."
+            confirmLabel="Mark All Done"
+            onConfirm={handleMarkAllDone}
+            trigger={<Button variant="outline">Mark All Done</Button>}
+          />
           <Button asChild>
             <Link href="/dashboard/poster">
               <Plus className="mr-2 h-4 w-4" />
@@ -477,8 +453,12 @@ export default function Dashboard({ voting, posters, userId, banner }) {
                             </Button>
                           }
                         />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                        <ConfirmDialog
+                          title="Reset votes?"
+                          description={`Archive the current result and reset votes to zero. Everyone can vote again on Poster ${poster.id}.`}
+                          confirmLabel="Reset"
+                          onConfirm={() => handleReset(poster)}
+                          trigger={
                             <Button
                               variant="outline"
                               size="sm"
@@ -486,28 +466,15 @@ export default function Dashboard({ voting, posters, userId, banner }) {
                             >
                               Reset
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Reset votes?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Archive the current result and reset votes to
-                                zero. Everyone can vote again on Poster{" "}
-                                {poster.id}.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleReset(poster)}
-                              >
-                                Reset
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                          }
+                        />
+                        <ConfirmDialog
+                          title="Delete Poster"
+                          description={`Are you sure you want to delete Poster ${poster.id}? This action cannot be undone and will also delete all associated voting data.`}
+                          confirmLabel="Delete Poster"
+                          confirmClassName="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onConfirm={() => handleDeletePoster(poster)}
+                          trigger={
                             <Button
                               variant="destructive"
                               size="sm"
@@ -521,27 +488,8 @@ export default function Dashboard({ voting, posters, userId, banner }) {
                                 <Trash2 className="h-4 w-4" />
                               )}
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Poster</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete Poster{" "}
-                                {poster.id}? This action cannot be undone and
-                                will also delete all associated voting data.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeletePoster(poster)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete Poster
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          }
+                        />
                        </div>
                       </TableCell>
                     </TableRow>
